@@ -360,4 +360,6 @@ DefinitionBlock (
         Method(_L0F) {
         }
     }
+
+#include "acpi-dsdt-acpi-time-and-alarm.dsl"
 }
