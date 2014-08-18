@@ -713,6 +713,9 @@ static void rtc_set_date_from_host(ISADevice *dev)
     /* set the CMOS date */
     rtc_set_cmos(s, &tm);
 
+    /* Set the daylight information */
+    s->cmos_data[RTC_DAYLIGHT] = (uint8_t)0;
+
     /* Set the timezone information as a signed 16-bit number of minutes */
     minuteseast = ((int64_t)s->base_rtc - (int64_t)mktime(&tm)) / 60;
     s->cmos_data[RTC_TIMEZONE_L] = (uint8_t)(minuteseast);
