@@ -702,6 +702,7 @@ static void rtc_set_date_from_host(ISADevice *dev)
 {
     RTCState *s = MC146818_RTC(dev);
     struct tm tm;
+    int minuteseast;
 
     qemu_get_timedate(&tm, 0);
 
@@ -711,6 +712,11 @@ static void rtc_set_date_from_host(ISADevice *dev)
 
     /* set the CMOS date */
     rtc_set_cmos(s, &tm);
+
+    /* Set the timezone information as a signed 16-bit number of minutes */
+    minuteseast = ((int64_t)s->base_rtc - (int64_t)mktime(&tm)) / 60;
+    s->cmos_data[RTC_TIMEZONE_L] = (uint8_t)(minuteseast);
+    s->cmos_data[RTC_TIMEZONE_H] = (uint8_t)(minuteseast >> 8);
 }
 
 static int rtc_post_load(void *opaque, int version_id)

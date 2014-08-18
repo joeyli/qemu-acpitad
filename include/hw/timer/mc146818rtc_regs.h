@@ -47,6 +47,8 @@
 /* PC cmos mappings */
 #define RTC_CENTURY              0x32
 #define RTC_IBM_PS2_CENTURY_BYTE 0x37
+#define RTC_TIMEZONE_L           0x3e
+#define RTC_TIMEZONE_H           0x3f
 
 #define REG_A_UIP 0x80
 
