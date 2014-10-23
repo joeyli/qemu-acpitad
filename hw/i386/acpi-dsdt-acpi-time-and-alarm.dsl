@@ -22,7 +22,30 @@
  ****************************************************************/
 
     Scope (\_SB.PCI0)
-    {   
+    {  
+	Scope (ISA.RTC)
+	{   
+	    OperationRegion (CMS, SystemCMOS, Zero, 0x40)
+            Field (CMS, ByteAcc, NoLock, Preserve)
+	    {   
+                CSEC,   8,
+                Offset (0x02),
+                CMIN,   8,
+                Offset (0x04),
+                CHOU,   8,
+                Offset (0x06),
+                CWDA,   8,
+                CDAY,   8,
+                CMON,   8,
+                CYEA,   8,
+                Offset (0x3B),
+                CDST,   8,
+                Offset (0x3E),
+                CTZL,   8,
+                CTZH,   8
+	    }
+	}
+ 
         Device (TIME)
         {   
             Name (_HID, "ACPI000E")
@@ -32,45 +55,6 @@
             /* Normal years */    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
             /* Leap years   */    31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
             })
-
-            /* CMOS memory access */
-            OperationRegion (CMS, SystemIO, 0x70, 0x02)
-            Field (CMS, ByteAcc, NoLock, Preserve)
-            {
-                CMSI,   8,
-                CMSD,   8
-            }
-
-            IndexField (CMSI, CMSD, ByteAcc, NoLock, Preserve)
-            {
-                Offset (0x00),
-                CSEC,   8,
-                Offset (0x02),
-                CMIN,   8,
-                Offset (0x04),
-                CHOU,   8,
-                Offset (0x06),
-                CWDA,   8,
-                Offset (0x07),
-                CDAY,   8,
-                Offset (0x08),
-                CMON,   8,
-                Offset (0x09),
-                CYEA,   8,
-                Offset (0x3b),
-		CDST,	8,
-                Offset (0x3e),
-		CTZL,	8,
-                Offset (0x3f),
-		CTZH,	8
-            }
-
-            Method (CMRD, 1, NotSerialized)
-            {
-                Store (Arg0, CMSI)
-                Store (CMSD, Local0)
-                Return (Local0)
-            }
 
             Method (DE2H, 1, NotSerialized)
             {
@@ -190,7 +174,7 @@
               CreateByteField (TZB, 0x01, UTZH) 
               CreateByteField (TZB, 0x02, TZS)  // Sign of Timezone
 
-              Store (GTZB(CTZL, CTZH), TZB) 	// Set sign of Timezone
+	      Store (GTZB (^^ISA.RTC.CTZL, ^^ISA.RTC.CTZH), TZB)	// Set sign of Timezone
               
 	      //reverse sign of mintes east for chnage to ACPI TZ
 	      If (LAnd(LNotEqual(TZ, 0x7FF), LEqual(TZS, 0)))     // positive means in east of UTC
@@ -224,8 +208,8 @@
 		Add (Not (TZ, TZ), 1, TZ)
 	      }
 
-	      Store (UTZH, CTZH)		// set to CMOS
-	      Store (UTZL, CTZL)
+	      Store (UTZH, ^^ISA.RTC.CTZH)	// set to CMOS
+	      Store (UTZL, ^^ISA.RTC.CTZL)
 	    }
 
             Method (INCT, 2, NotSerialized)
@@ -448,22 +432,16 @@
               CreateByteField (RTIM, 0x0c, DST)
 
               Acquire (MCTX, 0xFFFF)
-              Store (DE2H(CSEC), SEC)
-              Store (DE2H(CMIN), MIN)
-              Store (DE2H(CHOU), HOUR)
-              Store (DE2H(CDAY), DAY)
-              Store (DE2H(CMON), MON)
-              ShiftRight(YCEN(CYEA), 8, YERH)
-              Store (YCEN(CYEA), YERL)
+	      Store (DE2H (^^ISA.RTC.CSEC), SEC)
+	      Store (DE2H (^^ISA.RTC.CMIN), MIN)
+	      Store (DE2H (^^ISA.RTC.CHOU), HOUR)
+	      Store (DE2H (^^ISA.RTC.CDAY), DAY)
+	      Store (DE2H (^^ISA.RTC.CMON), MON)
+	      ShiftRight (YCEN (^^ISA.RTC.CYEA), 0x08, YERH)
+	      Store (YCEN (^^ISA.RTC.CYEA), YERL)
 	      E2TZ (RTIM)		// Transfer minutes east of UTC to ACPI TZ
-              UT2L(RTIM)                // Transfer UTC to Local time
-		Store ("CDST", Debug)
-		Store (CDST, Debug)
-		Store ("CTZL", Debug)
-		Store (CTZL, Debug)
-		Store ("CTZH", Debug)
-		Store (CTZH, Debug)
-              Store (CDST, DST)
+              UT2L (RTIM)		// Transfer UTC to Local time
+	      Store (^^ISA.RTC.CDST, DST)
               Release (MCTX)
               Return (RTIM)
             }
@@ -483,14 +461,14 @@
 
               Acquire (MCTX, 0xFFFF)
               LT2U (Arg0)               // Transfer Local time to UTC
-              Store (HE2D(YEAC(YERL, YERH)), CYEA)
-              Store (HE2D(MON), CMON)
-              Store (HE2D(DAY), CDAY)
-              Store (HE2D(HOUR), CHOU)
-              Store (HE2D(MIN), CMIN)
-              Store (HE2D(SEC), CSEC)
+	      Store (HE2D (YEAC (YERL, YERH)), ^^ISA.RTC.CYEA)
+	      Store (HE2D (MON), ^^ISA.RTC.CMON)
+	      Store (HE2D (DAY), ^^ISA.RTC.CDAY)
+	      Store (HE2D (HOUR), ^^ISA.RTC.CHOU)
+	      Store (HE2D (MIN), ^^ISA.RTC.CMIN)
+	      Store (HE2D (SEC), ^^ISA.RTC.CSEC)
 	      TZ2E (Arg0)		// Transfer ACPI TZ to minutes east of UTC and set to CMOS
-              Store (DST, CDST)
+	      Store (DST, ^^ISA.RTC.CDST)
               Release (MCTX)
               Return (0x00000000)
             }
